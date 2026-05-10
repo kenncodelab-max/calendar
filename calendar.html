@@ -9,11 +9,10 @@
 
   html, body {
     background: transparent;
+    width: 155px;
+    height: 155px;
+    overflow: hidden;
     font-family: -apple-system, 'Helvetica Neue', sans-serif;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    min-height: 100vh;
   }
 
   .widget {
@@ -72,7 +71,7 @@
 </div>
 <script>
   const DAYS = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
-  const MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+  const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
 
   function update() {
     const now = new Date();
