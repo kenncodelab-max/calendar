@@ -10,14 +10,26 @@
   html, body {
     background: transparent;
     font-family: -apple-system, 'Helvetica Neue', sans-serif;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
   }
 
   .widget {
-    display: inline-flex;
+    width: 155px;
+    height: 155px;
+    background: #ffffff;
+    border-radius: 36px;
+    display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    padding: 8px 16px 10px;
+    padding-top: 4px;
+    box-shadow:
+      0 4px 6px rgba(0,0,0,0.04),
+      0 12px 28px rgba(0,0,0,0.13),
+      0 32px 56px rgba(0,0,0,0.09);
   }
 
   .header-row {
@@ -27,31 +39,25 @@
   }
 
   .day-label {
-    font-size: 19px;
+    font-size: 18px;
     font-weight: 600;
     color: #FF3B30;
     letter-spacing: -0.2px;
   }
 
   .month-label {
-    font-size: 19px;
+    font-size: 18px;
     font-weight: 400;
     color: #8E8E93;
     letter-spacing: -0.2px;
   }
 
   .date-number {
-    font-size: 78px;
+    font-size: 80px;
     font-weight: 700;
     color: #1C1C1E;
-    letter-spacing: -4px;
-    line-height: 1;
-  }
-
-  .time-label {
-    font-size: 12px;
-    font-weight: 400;
-    color: #8E8E93;
+    letter-spacing: -5px;
+    line-height: 0.95;
     margin-top: 2px;
   }
 </style>
@@ -63,7 +69,6 @@
     <span class="month-label" id="month-name"></span>
   </div>
   <div class="date-number" id="date-num"></div>
-  <div class="time-label" id="time-display"></div>
 </div>
 <script>
   const DAYS = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
@@ -74,15 +79,10 @@
     document.getElementById('day-name').textContent = DAYS[now.getDay()];
     document.getElementById('month-name').textContent = MONTHS[now.getMonth()];
     document.getElementById('date-num').textContent = now.getDate();
-    let h = now.getHours();
-    const m = now.getMinutes().toString().padStart(2, '0');
-    const ampm = h >= 12 ? 'PM' : 'AM';
-    h = h % 12 || 12;
-    document.getElementById('time-display').textContent = `${h}:${m} ${ampm}`;
   }
 
   update();
-  setInterval(update, 1000);
+  setInterval(update, 60000);
 </script>
 </body>
 </html>
