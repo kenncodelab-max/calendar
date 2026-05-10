@@ -28,11 +28,9 @@
     height: 100%;
   }
 
-  /* ── shared card ── */
   .card {
     height: 100%;
     max-height: 155px;
-    aspect-ratio: 1 / 1;
     border-radius: clamp(20px, 4vw, 36px);
     display: flex;
     flex-direction: column;
@@ -45,9 +43,10 @@
     flex-shrink: 0;
   }
 
-  /* ── calendar card ── */
+  /* ── calendar ── */
   .cal {
     background: #ffffff;
+    aspect-ratio: 1 / 1;
     padding-top: 4px;
   }
 
@@ -61,7 +60,6 @@
     font-size: clamp(12px, 2vw, 18px);
     font-weight: 600;
     color: #FF3B30;
-    letter-spacing: -0.2px;
   }
 
   .cal .month-label {
@@ -79,9 +77,9 @@
     margin-top: 2px;
   }
 
-  /* ── clock card ── */
+  /* ── clock ── */
   .clk {
-    background: #1C1C1E;
+    background: #ffffff;
     aspect-ratio: 2 / 1;
     padding: 0 20px;
   }
@@ -89,23 +87,24 @@
   .clk .time-row {
     display: flex;
     align-items: baseline;
+    gap: 0;
   }
 
-  .clk .time-numbers {
-    font-size: clamp(36px, 7vw, 72px);
+  .clk .time-main {
+    font-size: clamp(36px, 7vw, 68px);
     font-weight: 300;
-    color: #ffffff;
+    color: #1C1C1E;
     letter-spacing: -2px;
     line-height: 1;
     font-variant-numeric: tabular-nums;
   }
 
   .clk .colon {
-    font-size: clamp(36px, 7vw, 72px);
+    font-size: clamp(36px, 7vw, 68px);
     font-weight: 300;
-    color: #ffffff;
+    color: #1C1C1E;
     line-height: 1;
-    margin: 0 2px;
+    margin: 0 1px;
     animation: blink 1s step-start infinite;
   }
 
@@ -114,17 +113,28 @@
     50% { opacity: 0.2; }
   }
 
-  .clk .ampm {
-    font-size: clamp(12px, 2vw, 22px);
-    font-weight: 400;
-    color: #ffffff;
+  .clk .seconds {
+    font-size: clamp(18px, 3.5vw, 34px);
+    font-weight: 300;
+    color: #8E8E93;
+    letter-spacing: -1px;
     align-self: flex-end;
-    margin-bottom: clamp(6px, 1vw, 10px);
+    margin-bottom: clamp(3px, 0.8vw, 7px);
+    margin-left: 3px;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .clk .ampm {
+    font-size: clamp(11px, 1.8vw, 20px);
+    font-weight: 500;
+    color: #1C1C1E;
+    align-self: flex-end;
+    margin-bottom: clamp(5px, 1vw, 9px);
     margin-left: 5px;
   }
 
   .clk .date-row {
-    font-size: clamp(10px, 1.5vw, 15px);
+    font-size: clamp(10px, 1.5vw, 14px);
     font-weight: 400;
     color: #8E8E93;
     margin-top: 4px;
@@ -147,9 +157,11 @@
   <!-- Clock -->
   <div class="card clk">
     <div class="time-row">
-      <span class="time-numbers" id="clk-h"></span>
+      <span class="time-main" id="clk-h"></span>
       <span class="colon">:</span>
-      <span class="time-numbers" id="clk-m"></span>
+      <span class="time-main" id="clk-m"></span>
+      <span class="colon" style="animation:none;opacity:1;">:</span>
+      <span class="seconds" id="clk-s"></span>
       <span class="ampm" id="clk-ampm"></span>
     </div>
     <div class="date-row" id="clk-date"></div>
@@ -157,18 +169,19 @@
 
 </div>
 <script>
-  const DAYS_SHORT  = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
-  const DAYS_LONG   = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+  const DAYS_SHORT   = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+  const DAYS_LONG    = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
   const MONTHS_SHORT = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
   const MONTHS_LONG  = ['January','February','March','April','May','June','July','August','September','October','November','December'];
 
   function update() {
     const now = new Date();
-    const d = now.getDay();
+    const d  = now.getDay();
     const mo = now.getMonth();
     const dt = now.getDate();
-    let h = now.getHours();
-    const m = now.getMinutes().toString().padStart(2,'0');
+    let h    = now.getHours();
+    const m  = now.getMinutes().toString().padStart(2,'0');
+    const s  = now.getSeconds().toString().padStart(2,'0');
     const ampm = h >= 12 ? 'PM' : 'AM';
     h = h % 12 || 12;
 
@@ -178,6 +191,7 @@
 
     document.getElementById('clk-h').textContent    = h;
     document.getElementById('clk-m').textContent    = m;
+    document.getElementById('clk-s').textContent    = s;
     document.getElementById('clk-ampm').textContent = ampm;
     document.getElementById('clk-date').textContent = `${DAYS_LONG[d]}, ${MONTHS_LONG[mo]} ${dt}`;
   }
