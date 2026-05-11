@@ -1,0 +1,430 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Zen Pomodoro</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Inter:wght@400;500;600&display=swap" rel="stylesheet" />
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: transparent;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    font-family: 'Inter', sans-serif;
+  }
+
+  .wrap {
+    background: #2D3B2D;
+    border-radius: 12px;
+    padding: 16px;
+    width: 340px;
+    position: relative;
+  }
+
+  .tab-row {
+    display: flex;
+    background: #1e2a1e;
+    border-radius: 8px;
+    padding: 3px;
+    margin-bottom: 16px;
+    gap: 2px;
+  }
+
+  .tab {
+    flex: 1;
+    font-family: 'Inter', sans-serif;
+    font-size: 12px;
+    font-weight: 500;
+    padding: 6px 8px;
+    border-radius: 6px;
+    border: none;
+    background: transparent;
+    color: #7a9e7a;
+    cursor: pointer;
+    transition: all 0.2s;
+    text-align: center;
+  }
+
+  .tab.active {
+    background: #ffffff;
+    color: #1a1a1a;
+  }
+
+  .phase-lbl {
+    text-align: center;
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: #7a9e7a;
+    margin-bottom: 12px;
+  }
+
+  .flip-row {
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+    gap: 4px;
+    margin-bottom: 14px;
+  }
+
+  .flip-unit { display: flex; flex-direction: column; align-items: center; gap: 6px; }
+
+  .flip-digit {
+    background: #ffffff;
+    color: #1a1a1a;
+    font-family: 'DM Mono', monospace;
+    font-size: 48px;
+    font-weight: 500;
+    width: 88px;
+    height: 88px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 10px;
+    line-height: 1;
+    transition: transform 0.08s ease;
+    position: relative;
+  }
+
+  .flip-digit::after {
+    content: '';
+    position: absolute;
+    left: 0; right: 0;
+    top: 50%;
+    height: 1px;
+    background: rgba(0,0,0,0.08);
+  }
+
+  .flip-digit.tick { transform: scaleY(0.92); }
+
+  .flip-lbl {
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: #7a9e7a;
+  }
+
+  .colon {
+    font-family: 'DM Mono', monospace;
+    font-size: 42px;
+    font-weight: 400;
+    color: #7a9e7a;
+    margin-bottom: 26px;
+    line-height: 1;
+  }
+
+  .btn-row {
+    display: flex;
+    gap: 8px;
+  }
+
+  .btn {
+    flex: 1;
+    font-family: 'Inter', sans-serif;
+    font-size: 13px;
+    font-weight: 500;
+    padding: 10px 8px;
+    border-radius: 8px;
+    border: none;
+    cursor: pointer;
+    transition: all 0.15s;
+    text-align: center;
+  }
+
+  .btn:active { transform: scale(0.97); }
+
+  .btn-reset  { background: #3d4f3d; color: #c8dcc8; }
+  .btn-reset:hover  { background: #4a5e4a; }
+
+  .btn-start  { background: #ffffff; color: #1a1a1a; }
+  .btn-start:hover  { background: #eaeaea; }
+
+  .btn-cancel { background: #3d4f3d; color: #c8dcc8; }
+  .btn-cancel:hover { background: #4a5e4a; }
+
+  .btn-ok {
+    flex: 1;
+    background: #5a8f5a;
+    color: #fff;
+    animation: pulse-ok 1.8s infinite;
+  }
+
+  @keyframes pulse-ok {
+    0%,100% { box-shadow: 0 0 0 0 rgba(90,143,90,0.4); }
+    50%      { box-shadow: 0 0 0 8px rgba(90,143,90,0); }
+  }
+
+  .session-dots {
+    display: flex;
+    gap: 6px;
+    justify-content: center;
+    margin-top: 14px;
+  }
+
+  .dot {
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: #3d4f3d;
+    transition: background 0.3s;
+  }
+  .dot.done    { background: #5a8f5a; }
+  .dot.current { background: #a8d0a8; }
+
+  .break-overlay {
+    position: absolute; inset: 0;
+    background: rgba(30,42,30,0.97);
+    border-radius: 12px;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    gap: 10px;
+    opacity: 0; pointer-events: none;
+    transition: opacity 0.4s;
+    padding: 16px;
+  }
+
+  .break-overlay.visible { opacity: 1; pointer-events: all; }
+
+  .break-title {
+    font-size: 20px; font-weight: 600;
+    color: #c8dcc8; letter-spacing: 0.02em;
+  }
+
+  .break-sub {
+    font-size: 11px; letter-spacing: 0.18em;
+    text-transform: uppercase; color: #7a9e7a;
+  }
+
+  .break-cd {
+    font-family: 'DM Mono', monospace;
+    font-size: 52px; font-weight: 400;
+    color: #ffffff; margin: 4px 0;
+  }
+</style>
+</head>
+<body>
+
+<div class="wrap">
+
+  <div class="tab-row">
+    <button class="tab active" id="tab-work"  onclick="switchMode('work')">Stopwatch</button>
+    <button class="tab"        id="tab-short" onclick="switchMode('short')">Short Break</button>
+    <button class="tab"        id="tab-long"  onclick="switchMode('long')">Long Break</button>
+  </div>
+
+  <div class="phase-lbl" id="phase-lbl">Focus</div>
+
+  <div class="flip-row">
+    <div class="flip-unit">
+      <div class="flip-digit" id="d-hh">00</div>
+      <div class="flip-lbl">Hours</div>
+    </div>
+    <div class="colon">:</div>
+    <div class="flip-unit">
+      <div class="flip-digit" id="d-mm">25</div>
+      <div class="flip-lbl">Min</div>
+    </div>
+    <div class="colon">:</div>
+    <div class="flip-unit">
+      <div class="flip-digit" id="d-ss">00</div>
+      <div class="flip-lbl">Sec</div>
+    </div>
+  </div>
+
+  <div class="btn-row">
+    <button class="btn btn-reset"  onclick="resetTimer()">Reset</button>
+    <button class="btn btn-start"  id="btn-start" onclick="toggleTimer()">Start</button>
+    <button class="btn btn-cancel" onclick="skipSession()">Cancel</button>
+  </div>
+
+  <div class="session-dots" id="dot-row"></div>
+
+  <div class="break-overlay" id="break-overlay">
+    <div class="break-title">Rest your mind</div>
+    <div class="break-sub" id="break-sub">Break time</div>
+    <div class="break-cd" id="break-cd">05:00</div>
+    <div class="btn-row" style="width:100%;">
+      <button class="btn btn-ok" onclick="endBreak()">OK — Back to work</button>
+    </div>
+  </div>
+
+</div>
+
+<script>
+  const MODES = {
+    work:  { label: 'Focus',       secs: 25 * 60 },
+    short: { label: 'Short Break', secs: 5  * 60 },
+    long:  { label: 'Long Break',  secs: 15 * 60 }
+  };
+  const SESSIONS = 4;
+  const pad = n => String(n).padStart(2, '0');
+
+  let mode         = 'work';
+  let totalSecs    = MODES.work.secs;
+  let remaining    = totalSecs;
+  let running      = false;
+  let interval     = null;
+  let sessionCount = 0;
+  let breakRemaining = 0;
+  let breakInterval  = null;
+
+  function render() {
+    const h = Math.floor(remaining / 3600);
+    const m = Math.floor((remaining % 3600) / 60);
+    const s = remaining % 60;
+    document.getElementById('d-hh').textContent = pad(h);
+    document.getElementById('d-mm').textContent = pad(m);
+    document.getElementById('d-ss').textContent = pad(s);
+  }
+
+  function renderDots() {
+    const row = document.getElementById('dot-row');
+    row.innerHTML = '';
+    for (let i = 0; i < SESSIONS; i++) {
+      const d = document.createElement('div');
+      d.className = 'dot'
+        + (i < sessionCount ? ' done' : '')
+        + (i === sessionCount && running ? ' current' : '');
+      row.appendChild(d);
+    }
+  }
+
+  function switchMode(m) {
+    if (running) return;
+    mode = m;
+    ['work','short','long'].forEach(t =>
+      document.getElementById('tab-' + t).classList.remove('active')
+    );
+    document.getElementById('tab-' + m).classList.add('active');
+    document.getElementById('phase-lbl').textContent = MODES[m].label;
+    totalSecs = MODES[m].secs;
+    remaining = totalSecs;
+    render();
+  }
+
+  function toggleTimer() {
+    if (running) {
+      clearInterval(interval);
+      running = false;
+      document.getElementById('btn-start').textContent = 'Resume';
+    } else {
+      running = true;
+      document.getElementById('btn-start').textContent = 'Pause';
+      renderDots();
+      interval = setInterval(tick, 1000);
+    }
+  }
+
+  function tick() {
+    if (remaining <= 0) {
+      clearInterval(interval);
+      running = false;
+      if (mode === 'work') {
+        sessionCount = Math.min(sessionCount + 1, SESSIONS);
+        renderDots();
+        startBreak(sessionCount % SESSIONS === 0);
+      } else {
+        switchMode('work');
+        document.getElementById('btn-start').textContent = 'Start';
+      }
+      return;
+    }
+    remaining--;
+    ['d-hh','d-mm','d-ss'].forEach(id => {
+      const el = document.getElementById(id);
+      el.classList.add('tick');
+      setTimeout(() => el.classList.remove('tick'), 80);
+    });
+    render();
+  }
+
+  function resetTimer() {
+    clearInterval(interval);
+    clearInterval(breakInterval);
+    running = false;
+    document.getElementById('break-overlay').classList.remove('visible');
+    totalSecs = MODES[mode].secs;
+    remaining = totalSecs;
+    document.getElementById('btn-start').textContent = 'Start';
+    render();
+    renderDots();
+  }
+
+  function skipSession() {
+    clearInterval(interval);
+    running = false;
+    remaining = 0;
+    document.getElementById('btn-start').textContent = 'Start';
+    tick();
+  }
+
+  function startBreak(isLong) {
+    breakRemaining = isLong ? 15 * 60 : 5 * 60;
+    document.getElementById('break-sub').textContent =
+      isLong ? 'Long break · 15 min' : 'Short break · 5 min';
+    document.getElementById('break-overlay').classList.add('visible');
+    playZenBowl();
+    renderBreakCd();
+    breakInterval = setInterval(() => {
+      if (breakRemaining <= 0) { clearInterval(breakInterval); return; }
+      breakRemaining--;
+      renderBreakCd();
+    }, 1000);
+  }
+
+  function renderBreakCd() {
+    const m = Math.floor(breakRemaining / 60);
+    const s = breakRemaining % 60;
+    document.getElementById('break-cd').textContent = pad(m) + ':' + pad(s);
+  }
+
+  function endBreak() {
+    clearInterval(breakInterval);
+    document.getElementById('break-overlay').classList.remove('visible');
+    if (sessionCount >= SESSIONS) sessionCount = 0;
+    switchMode('work');
+    renderDots();
+    document.getElementById('btn-start').textContent = 'Start';
+  }
+
+  function playZenBowl() {
+    try {
+      const ctx = new (window.AudioContext || window.webkitAudioContext)();
+      const strike = (freq, t, dur, gain) => {
+        const osc    = ctx.createOscillator();
+        const env    = ctx.createGain();
+        const filter = ctx.createBiquadFilter();
+        filter.type = 'lowpass';
+        filter.frequency.value = freq * 2.5;
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(freq, t);
+        osc.frequency.exponentialRampToValueAtTime(freq * 0.995, t + dur);
+        env.gain.setValueAtTime(0, t);
+        env.gain.linearRampToValueAtTime(gain, t + 0.01);
+        env.gain.exponentialRampToValueAtTime(0.001, t + dur);
+        osc.connect(filter);
+        filter.connect(env);
+        env.connect(ctx.destination);
+        osc.start(t);
+        osc.stop(t + dur);
+      };
+      const now = ctx.currentTime;
+      strike(432, now,        4.0, 0.28);
+      strike(648, now + 0.01, 3.5, 0.12);
+      strike(864, now + 0.02, 2.8, 0.07);
+      strike(220, now,        3.0, 0.09);
+      strike(432, now + 2.5,  5.0, 0.18);
+      strike(330, now + 2.51, 4.5, 0.08);
+    } catch(e) {}
+  }
+
+  render();
+  renderDots();
+</script>
+</body>
+</html>
