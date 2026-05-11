@@ -1,0 +1,495 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>Flip Clock</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+  html, body {
+    background: #191919;
+    width: 100%;
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: -apple-system, 'Helvetica Neue', sans-serif;
+  }
+
+  .app {
+    width: 100%;
+    max-width: 380px;
+    padding: clamp(12px,3vw,20px) clamp(12px,3vw,16px) clamp(24px,5vw,36px);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: clamp(10px,2.5vw,14px);
+  }
+
+  /* toggle */
+  .toggle-wrap {
+    background: #2c2c2e;
+    border-radius: 10px;
+    padding: 3px;
+    display: flex;
+    width: 100%;
+  }
+  .toggle-btn {
+    flex: 1;
+    height: clamp(30px,8vw,34px);
+    border: none;
+    border-radius: 8px;
+    background: transparent;
+    color: #636366;
+    font-size: clamp(12px,3.5vw,14px);
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+  .toggle-btn.active {
+    background: #ffffff;
+    color: #1c1c1e;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.25);
+  }
+
+  /* countdown inputs */
+  .countdown-inputs {
+    display: none;
+    align-items: flex-end;
+    gap: 3px;
+    width: 100%;
+  }
+  .countdown-inputs.visible { display: flex; }
+  .time-input-wrap {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 3px;
+    flex: 1;
+  }
+  .time-input-wrap label {
+    font-size: clamp(9px,2.2vw,10px);
+    font-weight: 500;
+    color: #8e8e93;
+    letter-spacing: 0.8px;
+    text-transform: uppercase;
+  }
+  .time-input-wrap input {
+    width: 100%;
+    height: clamp(44px,12vw,52px);
+    background: #ffffff;
+    border: none;
+    border-radius: 14px;
+    color: #1c1c1e;
+    font-size: clamp(22px,6vw,28px);
+    font-weight: 300;
+    text-align: center;
+    font-variant-numeric: tabular-nums;
+    outline: none;
+    -webkit-appearance: none;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.08), 0 6px 16px rgba(0,0,0,0.12);
+  }
+  .inp-sep {
+    font-size: clamp(18px,5vw,24px);
+    font-weight: 100;
+    color: #636366;
+    padding-bottom: clamp(10px,3vw,14px);
+    flex-shrink: 0;
+  }
+
+  /* clock row */
+  .clock-row {
+    display: flex;
+    align-items: center;
+    gap: clamp(3px,1.5vw,5px);
+    width: 100%;
+  }
+  .unit {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    flex: 1;
+    min-width: 0;
+  }
+
+  /* white card */
+  .flip-card {
+    width: 100%;
+    height: clamp(76px,22vw,96px);
+    position: relative;
+    border-radius: clamp(14px,4vw,22px);
+    overflow: hidden;
+    background: #ffffff;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.06), 0 8px 20px rgba(0,0,0,0.12), 0 20px 40px rgba(0,0,0,0.10);
+  }
+
+  .half {
+    position: absolute;
+    left: 0; right: 0;
+    width: 100%; height: 50%;
+    display: flex; overflow: hidden;
+  }
+  .half.top {
+    top: 0; background: #ffffff;
+    align-items: flex-end; justify-content: center; padding-bottom: 1px;
+  }
+  .half.bottom {
+    bottom: 0; background: #f5f5f7;
+    align-items: flex-start; justify-content: center; padding-top: 1px;
+  }
+  .half span {
+    font-size: clamp(46px,13vw,62px);
+    font-weight: 700;
+    color: #1c1c1e;
+    letter-spacing: -2px;
+    font-variant-numeric: tabular-nums;
+    line-height: 1;
+    transform: translateY(50%);
+    user-select: none;
+  }
+  .half.bottom span { transform: translateY(-50%); }
+
+  .divider {
+    position: absolute; left: 0; right: 0; top: 50%;
+    height: 1px; background: rgba(0,0,0,0.06);
+    z-index: 10; transform: translateY(-50%);
+  }
+
+  /* flap */
+  .flap {
+    position: absolute;
+    top: 0; left: 0; right: 0; height: 50%;
+    transform-origin: bottom center;
+    transform-style: preserve-3d;
+    z-index: 5; display: none;
+  }
+  .flap.go {
+    display: block;
+    animation: flipDown 0.38s cubic-bezier(0.45,0,0.55,1) forwards;
+  }
+  .flap-face {
+    position: absolute; inset: 0; overflow: hidden;
+    backface-visibility: hidden;
+    display: flex; align-items: flex-end; justify-content: center;
+    padding-bottom: 1px; background: #ffffff;
+  }
+  .flap-face.back {
+    transform: rotateX(180deg); background: #f5f5f7;
+    align-items: flex-start; padding-top: 1px; padding-bottom: 0;
+  }
+  .flap-face span {
+    font-size: clamp(46px,13vw,62px);
+    font-weight: 700; color: #1c1c1e;
+    letter-spacing: -2px; font-variant-numeric: tabular-nums;
+    line-height: 1; transform: translateY(50%); user-select: none;
+  }
+  .flap-face.back span { transform: translateY(-50%); }
+
+  @keyframes flipDown {
+    0%  { transform: rotateX(0deg); }
+    50% { transform: rotateX(-90deg); }
+    100%{ transform: rotateX(-90deg); }
+  }
+
+  .unit-label {
+    font-size: clamp(9px,2.2vw,10px);
+    font-weight: 500; color: #8e8e93;
+    letter-spacing: 1px; text-transform: uppercase;
+  }
+
+  .sep {
+    font-size: clamp(26px,7vw,36px);
+    font-weight: 200; color: #8e8e93;
+    margin-bottom: clamp(12px,3.5vw,16px);
+    line-height: 1; user-select: none; flex-shrink: 0;
+  }
+
+  /* controls */
+  .controls {
+    display: flex;
+    align-items: center;
+    gap: clamp(5px,1.5vw,8px);
+    width: 100%;
+  }
+  .ctrl-btn {
+    flex: 1;
+    height: clamp(40px,11vw,44px);
+    border-radius: clamp(10px,3vw,14px);
+    border: none; cursor: pointer;
+    font-size: clamp(13px,3.5vw,14px);
+    font-weight: 600;
+    display: flex; align-items: center; justify-content: center;
+    transition: opacity 0.1s ease, transform 0.1s ease;
+    background: #ffffff; color: #1c1c1e;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.08), 0 4px 12px rgba(0,0,0,0.10);
+  }
+  .ctrl-btn:active { opacity: 0.7; transform: scale(0.97); }
+  .btn-pause  { color: #ff9f0a; }
+  .btn-resume { color: #1c1c1e; }
+
+  /* alert */
+  .alert {
+    position: fixed; inset: 0;
+    background: rgba(0,0,0,0.55);
+    display: none; align-items: center; justify-content: center;
+    z-index: 100;
+  }
+  .alert.show { display: flex; }
+  .alert-card {
+    background: #ffffff;
+    border-radius: 20px;
+    padding: 28px 24px 0;
+    text-align: center;
+    display: flex; flex-direction: column; align-items: center; gap: 5px;
+    width: clamp(240px, 80vw, 290px);
+    box-shadow: 0 8px 32px rgba(0,0,0,0.25), 0 24px 64px rgba(0,0,0,0.2);
+    overflow: hidden;
+  }
+  .alert-icon { font-size: 36px; margin-bottom: 2px; }
+  .alert-title { font-size: 17px; font-weight: 700; color: #1c1c1e; }
+  .alert-sub   { font-size: 13px; color: #8e8e93; margin-bottom: 12px; line-height: 1.4; }
+  .alert-actions {
+    width: 100%;
+    display: flex;
+    border-top: 1px solid rgba(0,0,0,0.08);
+    margin-top: 4px;
+  }
+  .alert-btn {
+    flex: 1; height: 52px; border: none;
+    background: transparent; cursor: pointer;
+    font-size: 16px; font-weight: 500; color: #1c1c1e;
+    transition: background 0.1s;
+  }
+  .alert-btn:active { background: #f5f5f7; }
+  .alert-btn.primary { font-weight: 700; color: #1c1c1e; }
+  .alert-btn.repeat  { color: #ff9f0a; border-right: 1px solid rgba(0,0,0,0.08); }
+
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.2} }
+  .finished .half span { animation: pulse 0.7s ease infinite; color: #ff453a; }
+</style>
+</head>
+<body>
+<div class="app">
+
+  <div class="toggle-wrap">
+    <button class="toggle-btn active" id="btn-sw" onclick="setMode('stopwatch')">Stopwatch</button>
+    <button class="toggle-btn" id="btn-cd" onclick="setMode('countdown')">Countdown</button>
+  </div>
+
+  <div class="countdown-inputs" id="cd-inputs">
+    <div class="time-input-wrap">
+      <label>Hr</label>
+      <input type="number" id="in-h" value="0" min="0" max="99">
+    </div>
+    <span class="inp-sep">:</span>
+    <div class="time-input-wrap">
+      <label>Min</label>
+      <input type="number" id="in-m" value="5" min="0" max="59">
+    </div>
+    <span class="inp-sep">:</span>
+    <div class="time-input-wrap">
+      <label>Sec</label>
+      <input type="number" id="in-s" value="0" min="0" max="59">
+    </div>
+  </div>
+
+  <div class="clock-row">
+    <div class="unit">
+      <div class="flip-card" id="card-h">
+        <div class="half top"><span id="top-h">00</span></div>
+        <div class="half bottom"><span id="bot-h">00</span></div>
+        <div class="divider"></div>
+        <div class="flap" id="flap-h">
+          <div class="flap-face front"><span id="ff-h">00</span></div>
+          <div class="flap-face back"><span id="fb-h">00</span></div>
+        </div>
+      </div>
+      <div class="unit-label">Hours</div>
+    </div>
+    <span class="sep">:</span>
+    <div class="unit">
+      <div class="flip-card" id="card-m">
+        <div class="half top"><span id="top-m">00</span></div>
+        <div class="half bottom"><span id="bot-m">00</span></div>
+        <div class="divider"></div>
+        <div class="flap" id="flap-m">
+          <div class="flap-face front"><span id="ff-m">00</span></div>
+          <div class="flap-face back"><span id="fb-m">00</span></div>
+        </div>
+      </div>
+      <div class="unit-label">Min</div>
+    </div>
+    <span class="sep">:</span>
+    <div class="unit">
+      <div class="flip-card" id="card-s">
+        <div class="half top"><span id="top-s">00</span></div>
+        <div class="half bottom"><span id="bot-s">00</span></div>
+        <div class="divider"></div>
+        <div class="flap" id="flap-s">
+          <div class="flap-face front"><span id="ff-s">00</span></div>
+          <div class="flap-face back"><span id="fb-s">00</span></div>
+        </div>
+      </div>
+      <div class="unit-label">Sec</div>
+    </div>
+  </div>
+
+  <div class="controls">
+    <button class="ctrl-btn" onclick="doReset()">Reset</button>
+    <button class="ctrl-btn btn-start" id="btn-play" onclick="togglePlay()">Start</button>
+    <button class="ctrl-btn" onclick="doReset()">Cancel</button>
+  </div>
+
+</div>
+
+<!-- Alert -->
+<div class="alert" id="alert">
+  <div class="alert-card">
+    <div class="alert-icon">⏰</div>
+    <div class="alert-title">Time's Up!</div>
+    <div class="alert-sub">Your countdown has ended.<br>What would you like to do?</div>
+    <div class="alert-actions">
+      <button class="alert-btn repeat" onclick="repeatCountdown()">Repeat</button>
+      <button class="alert-btn primary" onclick="dismissAlert()">OK</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  let mode='stopwatch', running=false, ticker=null, alarmLoop=null;
+  let elapsed=0, remaining=0, countdownSet=0;
+  let prev={h:-1, m:-1, s:-1};
+  let audioCtx=null;
+
+  const pad=n=>String(Math.max(0,n)).padStart(2,'0');
+  const getCtx=()=>{if(!audioCtx)audioCtx=new(window.AudioContext||window.webkitAudioContext)();return audioCtx;};
+
+  function playAlarm(){
+    try{
+      const c=getCtx();
+      [880,1108,1318,880,1318].forEach((f,i)=>{
+        const o=c.createOscillator(),g=c.createGain();
+        o.connect(g);g.connect(c.destination);
+        const t=c.currentTime+i*0.22;
+        o.type='sine';o.frequency.value=f;
+        g.gain.setValueAtTime(0,t);
+        g.gain.linearRampToValueAtTime(0.35,t+0.02);
+        g.gain.exponentialRampToValueAtTime(0.001,t+0.25);
+        o.start(t);o.stop(t+0.26);
+      });
+    }catch(e){}
+  }
+
+  function stopAlarm(){
+    if(alarmLoop){clearInterval(alarmLoop);alarmLoop=null;}
+  }
+
+  function flipUnit(u,val){
+    const d=pad(val);
+    const top=document.getElementById('top-'+u);
+    const bot=document.getElementById('bot-'+u);
+    const flap=document.getElementById('flap-'+u);
+    const ff=document.getElementById('ff-'+u);
+    const fb=document.getElementById('fb-'+u);
+    if(top.textContent===d)return;
+    ff.textContent=top.textContent;fb.textContent=d;
+    flap.classList.remove('go');void flap.offsetWidth;flap.classList.add('go');
+    setTimeout(()=>{top.textContent=d;bot.textContent=d;flap.classList.remove('go');},360);
+  }
+
+  function render(total){
+    total=Math.max(0,total);
+    const h=Math.floor(total/3600),m=Math.floor((total%3600)/60),s=total%60;
+    if(h!==prev.h){flipUnit('h',h);prev.h=h;}
+    if(m!==prev.m){flipUnit('m',m);prev.m=m;}
+    if(s!==prev.s){flipUnit('s',s);prev.s=s;}
+  }
+
+  function setMode(m){
+    if(running)doReset();
+    mode=m; elapsed=0; remaining=0; prev={h:-1,m:-1,s:-1};
+    document.getElementById('btn-sw').classList.toggle('active',m==='stopwatch');
+    document.getElementById('btn-cd').classList.toggle('active',m==='countdown');
+    document.getElementById('cd-inputs').classList.toggle('visible',m==='countdown');
+    document.querySelectorAll('.flip-card').forEach(c=>c.classList.remove('finished'));
+    setBtn('start'); render(0);
+  }
+
+  function setBtn(state){
+    const b=document.getElementById('btn-play');
+    const map={start:['Start',''],pause:['Pause','btn-pause'],resume:['Resume','btn-resume']};
+    b.textContent=map[state][0];
+    b.className='ctrl-btn btn-start '+(map[state][1]||'');
+  }
+
+  function togglePlay(){
+    getCtx();
+    if(!running){
+      if(mode==='countdown'&&elapsed===0&&remaining===0){
+        const h=parseInt(document.getElementById('in-h').value)||0;
+        const m=parseInt(document.getElementById('in-m').value)||0;
+        const s=parseInt(document.getElementById('in-s').value)||0;
+        countdownSet=h*3600+m*60+s;
+        if(!countdownSet)return;
+        remaining=countdownSet;
+      }
+      running=true; setBtn('pause');
+      ticker=setInterval(tick,1000);
+    } else {
+      running=false; clearInterval(ticker);
+      setBtn(elapsed>0||remaining>0?'resume':'start');
+    }
+  }
+
+  function tick(){
+    if(mode==='stopwatch'){elapsed++;render(elapsed);}
+    else{
+      remaining--;render(remaining);
+      if(remaining<=0){
+        clearInterval(ticker);running=false;
+        elapsed=0;remaining=0;
+        document.querySelectorAll('.flip-card').forEach(c=>c.classList.add('finished'));
+        setBtn('start');
+        setTimeout(()=>{
+          playAlarm();
+          document.getElementById('alert').classList.add('show');
+          alarmLoop=setInterval(playAlarm,1500);
+        },100);
+      }
+    }
+  }
+
+  function doReset(){
+    stopAlarm();
+    clearInterval(ticker);running=false;elapsed=0;remaining=0;
+    prev={h:-1,m:-1,s:-1};
+    document.querySelectorAll('.flip-card').forEach(c=>c.classList.remove('finished'));
+    document.getElementById('alert').classList.remove('show');
+    setBtn('start');render(0);
+  }
+
+  function dismissAlert(){
+    stopAlarm();
+    document.getElementById('alert').classList.remove('show');
+    document.querySelectorAll('.flip-card').forEach(c=>c.classList.remove('finished'));
+    doReset();
+  }
+
+  function repeatCountdown(){
+    stopAlarm();
+    document.getElementById('alert').classList.remove('show');
+    document.querySelectorAll('.flip-card').forEach(c=>c.classList.remove('finished'));
+    elapsed=0; remaining=countdownSet;
+    prev={h:-1,m:-1,s:-1}; render(remaining);
+    setTimeout(()=>{
+      running=true; setBtn('pause');
+      ticker=setInterval(tick,1000);
+    },400);
+  }
+
+  render(0);
+</script>
+</body>
+</html>
